@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sound-Wich Music Player</title>
+
+  <!-- External Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.1/p5.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.1/addons/p5.sound.min.js"></script>
+  <script src="https://unpkg.com/ml5@0.12.2/dist/ml5.min.js"></script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+      background-color: #121212;
+      color: #f0e6ff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      perspective: 1000px;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: radial-gradient(circle at center, rgb(176, 154, 197), transparent 70%);
+      animation: pulseBackground 8s infinite alternate;
+      z-index: -1;
+    }
+
+    @keyframes pulseBackground {
+      from { transform: scale(1); }
+      to { transform: scale(1.05); }
+    }
+
+    .container {
+      width: 80%;
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 20px;
+      background-color: #1e1e2f;
+      border-radius: 15px;
+      box-shadow: 0 0 25px rgba(176, 154, 197, 0.3),
+                  inset 0 0 10px rgba(255, 255, 255, 0.02);
+      transform-style: preserve-3d;
+      transform: perspective(1000px);
+      transition: transform 0.3s ease;
+    }
+
+    .container:hover {
+      transform: perspective(1000px) rotateX(1deg) rotateY(1deg);
+    }
+
+    h1 {
+      font-size: 3em;
+      margin-bottom: 10px;
+      color: #c084fc;
+      text-align: center;
+    }
+
+    .description {
+      font-size: 1.2em;
+      text-align: center;
+      color: #d8b4fe;
+      margin-bottom: 30px;
+    }
+
+    .music-controls {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 20px 0;
+    }
+
+    .music-control-button {
+      background-color: #c084fc;
+      color: #121212;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 10px 20px rgba(192, 132, 252, 0.3),
+                  inset 0 -3px 5px rgba(0, 0, 0, 0.3);
+      transform: translateZ(10px);
+    }
+
+    .music-control-button:hover {
+      background-color: #a855f7;
+    }
+
+    .music-control-button:active {
+      transform: translateY(2px) scale(0.98);
+      box-shadow: 0 5px 10px rgba(192, 132, 252, 0.2),
+                  inset 0 -1px 3px rgba(0, 0, 0, 0.4);
+    }
+
+    #player {
+      width: 100%;
+      margin-top: 20px;
+      background-color: #333;
+      border-radius: 10px;
+      box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.1),
+                  0 8px 15px rgba(0, 0, 0, 0.3);
+      transform: translateZ(5px);
+    }
+
+    .gesture-box, .camera-box {
+      background-color: #1e1e2f;
+      padding: 20px;
+      border-radius: 15px;
+      flex: 1;
+      color: #f0e6ff;
+      box-shadow: 0 15px 25px rgba(138, 43, 226, 0.2),
+                  inset 0 0 10px rgba(192, 132, 252, 0.1);
+      transition: transform 0.3s ease;
+      transform: perspective(800px) rotateX(0.5deg);
+    }
+
+    .gesture-box:hover, .camera-box:hover {
+      transform: perspective(800px) rotateX(2deg) rotateY(2deg) scale(1.01);
+    }
+
+    .gesture-box ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .gesture-box li {
+      margin: 10px 0;
+      font-size: 1.1em;
+    }
+
+    .camera-box #canvas-container {
+      width: 100%;
+      height: auto;
+      border: 2px dashed #c084fc;
+      margin-top: 10px;
+      padding: 10px;
+      text-align: center;
+      border-radius: 10px;
+    }
+
+    input[type="file"] {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #333;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1),
+                  inset 0 -2px 5px rgba(0, 0, 0, 0.3);
+      transform: translateZ(5px);
+    }
+
+    .uploaded-songs {
+      margin-top: 20px;
+    }
+
+    .uploaded-songs ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    .uploaded-songs li {
+      padding: 8px 0;
+      border-bottom: 1px solid #444;
+      color: #e0d4ff;
+    }
+
+    .volume-control {
+      margin-top: 20px;
+    }
+
+    .volume-control label {
+      display: block;
+      margin-bottom: 5px;
+      color: #f0e6ff;
+    }
+
+    #volume {
+      width: 100%;
+      accent-color: #c084fc;
+      height: 8px;
+      border-radius: 5px;
+      box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.1),
+                  0 2px 8px rgba(192, 132, 252, 0.2);
+    }
+
+    .gesture-camera-wrapper {
+      display: flex;
+      justify-content: space-between;
+      width: 70%;
+      max-width: 1000px;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Sound-Wich</h1>
+    <p class="description">Sound-Wich is your AI-powered music player. Upload your favorite songs and control playback with simple gestures. Enjoy the music without touching your device! 🎵✨
+
+</p>
+    <div class="music-controls">
+      <button class="music-control-button" onclick="playSong()">Play</button>
+      <button class="music-control-button" onclick="pauseSong()">Pause</button>
+      <button class="music-control-button" onclick="nextSong()">Next</button>
+      <button class="music-control-button" onclick="prevSong()">Previous</button>
+    </div>
+    <audio id="player" controls></audio>
+  </div>
+
+  <div class="gesture-camera-wrapper">
+    <div class="gesture-box">
+      <h2>🎵 Gesture Controls</h2>
+      <ul>
+        <li>👍 Thumbs Up - <strong>Play</strong></li>
+        <li>👎 Thumbs Down - <strong>Pause</strong></li>
+        <li>👉 Point Right - <strong>Next</strong></li>
+        <li>👈 Point Left - <strong>Previous</strong></li>
+        <li>✋ Open Palm - <strong>Volume Up</strong></li>
+        <li>✊ Fist - <strong>Volume Down</strong></li>
+      </ul>
+    </div>
+    <div class="camera-box">
+      <h2>🎥 Camera</h2>
+      <div id="canvas-container"></div>
+    </div>
+  </div>
+
+  <div class="container">
+    <h2>Upload Your Song</h2>
+    <input type="file" id="audioUpload" accept="audio/*" />
+    <div class="uploaded-songs">
+      <h3>Uploaded Songs</h3>
+      <ul id="songList"></ul>
+    </div>
+    <div class="volume-control">
+      <label for="volume">Volume</label>
+      <input type="range" id="volume" min="0" max="1" step="0.01" value="1" />
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+  <script src="sketch.js"></script>
+</body>
+</html>
