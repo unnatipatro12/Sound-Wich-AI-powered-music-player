@@ -12,7 +12,7 @@
   - 👉 Point Right → Next
   - 👈 Point Left → Previous
 - Gesture detection via webcam
-- Stylish dark theme with lavender-green accents
+- Stylish dark theme with lavender accents
 
 ## 🛠️ Technologies Used
 - HTML, CSS, JavaScript
